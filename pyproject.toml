@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "quick-rag"
+version = "0.1.0"
+description = ""
+authors = ["Antoine Déchappe <dechantoine@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+chainlit = "^1.0.101"
+loguru = "^0.7.2"
+llama-index = "^0.9.33"
+transformers = "^4.36.2"
+torch = "^2.1.2"
+pypdf = "^3.17.4"
+sentence-transformers = "^2.2.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
