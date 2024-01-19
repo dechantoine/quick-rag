@@ -2,6 +2,9 @@ import chainlit as cl
 from loguru import logger
 from rag import MyLocalRAG
 
+TEMPLATE_RESPONSE = "Bonjour, j'ai trouvé {} résultats pour votre recherche : \n\n{}"
+TEMPLATE_NODE = "{}. (score: {:.2f})\n{}\n\n"
+
 @cl.on_chat_start
 async def on_chat_start() -> None:
     """This function is called when the chat is started.
@@ -17,13 +20,12 @@ async def on_chat_start() -> None:
 @cl.on_message
 async def main(message: cl.Message):
     rag = cl.user_session.get("rag")
-    logger.info(message.content)
 
-    #response = await cl.make_async(rag.query)(message.content)
     response = rag.query(message.content)
 
-    logger.info(response)
+    formatted_sources = "".join([TEMPLATE_NODE.format(i + 1, node.score, node.node.get_content())
+                                 for i, node in enumerate(response)])
+    formated_response = TEMPLATE_RESPONSE.format(len(response), formatted_sources)
 
-    response_message = cl.Message(content=response)
-
+    response_message = cl.Message(content=formated_response)
     await response_message.send()

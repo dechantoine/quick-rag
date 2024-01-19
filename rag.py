@@ -5,6 +5,7 @@ from loguru import logger
 from sentence_transformers import SentenceTransformer
 
 from llama_index import ServiceContext, StorageContext, load_index_from_storage, set_global_service_context
+from llama_index.schema import NodeWithScore
 
 MODEL_NAME = os.environ.get("MODEL_NAME", "thenlper/gte-base")
 
@@ -55,8 +56,8 @@ class MyLocalRAG:
             # response_mode="no_text",
         )
 
-    def query(self, message: str) -> str:
+    def query(self, message: str) -> list[NodeWithScore]:
         logger.info(message)
         response = self.query_engine.query(message)
         logger.info(response)
-        return response.response
+        return response.source_nodes
