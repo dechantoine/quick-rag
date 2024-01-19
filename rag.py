@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from loguru import logger
 
 from sentence_transformers import SentenceTransformer
 
@@ -15,7 +16,12 @@ class MyLocalRAG:
                 self.model = SentenceTransformer(MODEL_NAME)
 
             def get_text_embedding_batch(self, texts, **kwargs):
-                return self.model.encode(texts)
+                return self.model.encode(texts,
+                                         convert_to_numpy=True).tolist()
+
+            def get_agg_embedding_from_queries(self, queries, **kwargs):
+                return self.model.encode(queries,
+                                         convert_to_numpy=True).tolist()
 
         embedding_model = LocalEmbeddingModel()
 
@@ -23,6 +29,7 @@ class MyLocalRAG:
             embed_model=embedding_model,
             llm=None,
             chunk_size=256,
+            num_output=5
         )
 
         set_global_service_context(service_context)
@@ -45,9 +52,11 @@ class MyLocalRAG:
             streaming=False,
             service_context=service_context,
             # refine_template=refine_template,
-            response_mode="no_text",
+            # response_mode="no_text",
         )
 
     def query(self, message: str) -> str:
+        logger.info(message)
         response = self.query_engine.query(message)
+        logger.info(response)
         return response.response

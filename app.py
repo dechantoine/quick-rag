@@ -17,15 +17,13 @@ async def on_chat_start() -> None:
 @cl.on_message
 async def main(message: cl.Message):
     rag = cl.user_session.get("rag")
+    logger.info(message.content)
+
     #response = await cl.make_async(rag.query)(message.content)
     response = rag.query(message.content)
 
-    response_message = cl.Message(content="")
+    logger.info(response)
 
-    for token in response.response_gen:
-        await response_message.stream_token(token=token)
-
-    if response.response_txt:
-        response_message.content = response.response_txt
+    response_message = cl.Message(content=response)
 
     await response_message.send()
