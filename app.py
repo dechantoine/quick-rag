@@ -2,7 +2,7 @@ import os
 import chainlit as cl
 from loguru import logger
 from prompts import WELCOME, ASK_FOLDER
-from rag import MyLocalRAG
+from llama_index_rag import MyLocalRAG
 
 TEMPLATE_RESPONSE = "Bonjour, j'ai trouvé {} résultats pour votre recherche : \n\n{}"
 TEMPLATE_NODE = "{}. (score: {:.2f})\n{}\n\n"
@@ -14,8 +14,9 @@ async def on_chat_start() -> None:
     It is used to initialize the chatbot.
 
     """
-    res = await cl.AskFileMessage(content=WELCOME + ASK_FOLDER).send()
+    res = await cl.AskMessage(content=WELCOME + ASK_FOLDER).send()
     if res:
+        #TODO: check if the folder exists + display n first docs + ask for validation (button)
         os.environ["DATA_DIR"] = res['output']
 
     rag = MyLocalRAG()
