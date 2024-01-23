@@ -7,7 +7,8 @@ from sentence_transformers import SentenceTransformer
 from llama_index import ServiceContext, StorageContext, load_index_from_storage, set_global_service_context
 from llama_index.schema import NodeWithScore
 
-MODEL_NAME = os.environ.get("MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
+EMBEDDING_MODEL_NAME = os.environ.get("EMBEDDING_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
+LLM_MODEL_NAME = os.environ.get("EMBEDDING_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 
 class MyLocalRAG:
