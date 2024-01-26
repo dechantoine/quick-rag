@@ -6,8 +6,15 @@ ASK_FOLDER = """
 Afin de vous assister, pourriez-vous m'indiquer dans quel dossier local se trouvent vos documents ?
 """
 
+LOADING_DONE = """J'ai terminé de charger les documents. Vous pouvez commencer à poser vos questions."""
+
 TEMPLATE_RESPONSE = """
 J'ai trouvé {} résultats pour votre recherche : \n\n{}
 """
 
 TEMPLATE_NODE = "{}. (score: {:.2f})\n{}\n\n"
+
+SYSTEM_PROMPT_MISTRAL = """<s>[INST] You are a helpful assistant.
+ Your task is to answer the user query using the provided context. [/INST]"""
+
+QUERY_WRAPPER_PROMPT_MISTRAL = "[INST] {query_str} [/INST]"
