@@ -16,6 +16,7 @@ pypdf = "^3.17.4"
 sentence-transformers = "^2.2.2"
 llama-cpp-python = "^0.2.32"
 huggingface-hub = "^0.20.3"
+jupyter = "^1.0.0"
 
 
 [build-system]
