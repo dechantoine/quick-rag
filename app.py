@@ -17,8 +17,16 @@ async def on_chat_start() -> None:
     """
     res = await cl.AskUserMessage(content=WELCOME + ASK_FOLDER).send()
     if res:
-        #TODO: check if the folder exists + display n first docs + ask for validation (button)
-        os.environ["DATA_DIR"] = res['output']
+        while not os.path.isdir(res['output']):
+            await cl.Message(content="Je suis désolé, le dossier n'existe pas.").send()
+            res = await cl.AskUserMessage(content=ASK_FOLDER).send()
+
+    os.environ["DATA_DIR"] = res['output']
+    logger.info("Data directory set to {}".format(res['output']))
+
+
+    files = os.listdir(res['output'])[:3]
+    await cl.Message(content="J'ai identifié votre dossier. Voici les 3 premiers fichiers : \n\n{}".format("\n".join(files))).send()
 
     async_local_rag = cl.make_async(MyLocalRAG)
     rag = await async_local_rag()
