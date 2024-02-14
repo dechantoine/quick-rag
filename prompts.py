@@ -6,6 +6,10 @@ ASK_FOLDER = """
 Afin de vous assister, pourriez-vous m'indiquer dans quel dossier local se trouvent vos documents ?
 """
 
+FOLDER_NOT_EXIST = """Je suis désolé, le dossier n'existe pas."""
+
+FOLDER_N_FIRST_FILES = """J'ai identifié votre dossier. Voici les {} premiers fichiers : \n\n{}"""
+
 LOADING_DONE = """J'ai terminé de charger les documents. Vous pouvez commencer à poser vos questions."""
 
 TEMPLATE_RESPONSE = """

@@ -1,11 +1,10 @@
 import os
 import chainlit as cl
 from loguru import logger
-from prompts import WELCOME, ASK_FOLDER, LOADING_DONE
+from prompts import WELCOME, ASK_FOLDER, LOADING_DONE, FOLDER_NOT_EXIST, FOLDER_N_FIRST_FILES
 from llama_index_rag import MyLocalRAG
 
-TEMPLATE_RESPONSE = "Bonjour, j'ai trouvé {} résultats pour votre recherche : \n\n{}"
-TEMPLATE_NODE = "{}. (score: {:.2f})\n{}\n\n"
+N_FILES_TO_SHOW = 3
 
 @cl.on_chat_start
 @logger.catch
@@ -18,15 +17,15 @@ async def on_chat_start() -> None:
     res = await cl.AskUserMessage(content=WELCOME + ASK_FOLDER).send()
     if res:
         while not os.path.isdir(res['output']):
-            await cl.Message(content="Je suis désolé, le dossier n'existe pas.").send()
+            await cl.Message(content=FOLDER_NOT_EXIST).send()
             res = await cl.AskUserMessage(content=ASK_FOLDER).send()
 
     os.environ["DATA_DIR"] = res['output']
     logger.info("Data directory set to {}".format(res['output']))
 
-
-    files = os.listdir(res['output'])[:3]
-    await cl.Message(content="J'ai identifié votre dossier. Voici les 3 premiers fichiers : \n\n{}".format("\n".join(files))).send()
+    files = os.listdir(res['output'])[:N_FILES_TO_SHOW]
+    await cl.Message(content=FOLDER_N_FIRST_FILES.format(N_FILES_TO_SHOW,
+                                                         "\n".join(files))).send()
 
     async_local_rag = cl.make_async(MyLocalRAG)
     rag = await async_local_rag()
