@@ -13,15 +13,13 @@ from llama_index.llms import (
 )
 from llama_index.types import PydanticProgramMode
 from llama_index.prompts import PromptTemplate
+from llama_index.response.schema import StreamingResponse
 
 from llama_cpp import Llama
 from llama_cpp.llama_types import CompletionChunk
 
 from prompts import SYSTEM_PROMPT_MISTRAL, QUERY_WRAPPER_PROMPT_MISTRAL
 
-EMBEDDING_MODEL_NAME = os.environ.get("EMBEDDING_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
-LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME", "TheBloke/Mistral-7B-Instruct-v0.2-GGUF/mistral-7b-instruct-v0.2.Q5_K_M.gguf")
-DATA_DIR = os.environ.get("DATA_DIR", "data")
 
 class MyLocalRAG:
 
@@ -29,14 +27,14 @@ class MyLocalRAG:
     def __init__(self):
 
         class LocalEmbeddingModel:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-            def get_text_embedding_batch(self, texts, **kwargs):
+            def get_text_embedding_batch(self, texts, **kwargs) -> list[list[float]]:
                 return self.model.encode(texts,
                                          convert_to_numpy=True).tolist()
 
-            def get_agg_embedding_from_queries(self, queries, **kwargs):
+            def get_agg_embedding_from_queries(self, queries, **kwargs) -> list[float]:
                 return self.model.encode(queries,
                                          convert_to_numpy=True).tolist()
 
@@ -47,7 +45,7 @@ class MyLocalRAG:
             num_output: int = 256
             model_name: str = "custom"
 
-            def __init__(self):
+            def __init__(self) -> None:
                 model_paths = LLM_MODEL_NAME.split("/")
                 self.system_prompt = PromptTemplate(SYSTEM_PROMPT_MISTRAL)
                 self.query_wrapper_prompt = PromptTemplate(QUERY_WRAPPER_PROMPT_MISTRAL)
@@ -69,7 +67,7 @@ class MyLocalRAG:
                     # The max sequence length to use - note that longer sequence lengths require much more resources
                     n_threads=7,
                     # The number of CPU threads to use, tailor to your system and the resulting performance
-                    n_gpu_layers=0
+                    n_gpu_layers=0,
                     # The number of layers to offload to GPU, if you have GPU acceleration available
                     # Set to 0 if no GPU acceleration is available on your system.
                 )
@@ -110,6 +108,11 @@ class MyLocalRAG:
                     model_name=self.model_name,
                 )
 
+        DATA_DIR = os.environ.get("DATA_DIR", "data")
+        EMBEDDING_MODEL_NAME = os.environ.get("EMBEDDING_MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
+        LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME",
+                                        "TheBloke/Mistral-7B-Instruct-v0.2-GGUF/mistral-7b-instruct-v0.2.Q5_K_M.gguf")
+
         embedding_model = LocalEmbeddingModel()
         llm = LocalLLM()
 
@@ -130,6 +133,8 @@ class MyLocalRAG:
         except:
             # rebuild index from data by calling embedding model
             from llama_index import VectorStoreIndex, SimpleDirectoryReader
+
+            logger.info("Building index from data in folder {}...".format(DATA_DIR))
 
             documents = SimpleDirectoryReader(DATA_DIR).load_data()
             index = VectorStoreIndex.from_documents(documents=documents,
