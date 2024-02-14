@@ -18,8 +18,8 @@ from typing import Iterator
 
 from loguru import logger
 
-class LocalLLM():
 
+class LocalLLM():
     context_window: int = 32768
     num_output: int = 256
     model_name: str = "custom"
@@ -30,6 +30,21 @@ class LocalLLM():
         self.query_wrapper_prompt = PromptTemplate(QUERY_WRAPPER_PROMPT_MISTRAL)
         self.pydantic_program_mode = PydanticProgramMode.DEFAULT
 
+        self.download_model(model_paths)
+        self.load_model(model_paths[2])
+
+        self.model = Llama(
+            model_path=os.path.join("temp", model_paths[2]),
+            n_ctx=2048,
+            # The max sequence length to use - note that longer sequence lengths require much more resources
+            n_threads=7,
+            # The number of CPU threads to use, tailor to your system and the resulting performance
+            n_gpu_layers=0,
+            # The number of layers to offload to GPU, if you have GPU acceleration available
+            # Set to 0 if no GPU acceleration is available on your system.
+        )
+
+    def download_model(self, model_paths: list[str]) -> None:
         if not os.path.exists("temp"):
             os.makedirs("temp")
 
@@ -40,8 +55,9 @@ class LocalLLM():
                             local_dir="temp",
                             local_dir_use_symlinks=False)
 
+    def load_model(self, model_name: str) -> None:
         self.model = Llama(
-            model_path=os.path.join("temp", model_paths[2]),
+            model_path=os.path.join("temp", model_name),
             n_ctx=2048,
             # The max sequence length to use - note that longer sequence lengths require much more resources
             n_threads=7,
@@ -61,11 +77,11 @@ class LocalLLM():
         response = self.model(formatted_query,
                               max_tokens=1024,
                               stop=["</s>"],
-                              echo=False ,)
+                              echo=False, )
         logger.info(f"response: {response}")
         return response["choices"][0]["text"]
 
-    def stream(self, query, **kwargs) -> Iterator[CompletionChunk]:
+    def stream(self, query, **kwargs) -> Iterator[str]:
         formatted_query = self.format_query(query, **kwargs)
         logger.info(f"query: {formatted_query}")
         response = self.model(formatted_query,
