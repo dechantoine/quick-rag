@@ -5,18 +5,17 @@ from loguru import logger
 from sentence_transformers import SentenceTransformer
 from huggingface_hub import hf_hub_download
 
+from typing import Iterator
+
 from llama_index import ServiceContext, StorageContext, load_index_from_storage, set_global_service_context
 from llama_index.llms import (
-    CustomLLM,
-    CompletionResponse,
-    CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.schema import NodeWithScore
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.types import PydanticProgramMode
 from llama_index.prompts import PromptTemplate
 
 from llama_cpp import Llama
+from llama_cpp.llama_types import CompletionChunk
 
 from prompts import SYSTEM_PROMPT_MISTRAL, QUERY_WRAPPER_PROMPT_MISTRAL
 
@@ -25,6 +24,8 @@ LLM_MODEL_NAME = os.environ.get("LLM_MODEL_NAME", "TheBloke/Mistral-7B-Instruct-
 DATA_DIR = os.environ.get("DATA_DIR", "data")
 
 class MyLocalRAG:
+
+    @logger.catch
     def __init__(self):
 
         class LocalEmbeddingModel:
@@ -73,9 +74,12 @@ class MyLocalRAG:
                     # Set to 0 if no GPU acceleration is available on your system.
                 )
 
-            def predict(self, query, **kwargs):
-                formatted_query = (self.system_prompt.get_template()
-                                   + self.query_wrapper_prompt.format(query_str=query.format_messages(**kwargs)[0].content))
+            def format_query(self, query, **kwargs) -> str:
+                return (self.system_prompt.get_template()
+                        + self.query_wrapper_prompt.format(query_str=query.format_messages(**kwargs)[0].content))
+
+            def predict(self, query, **kwargs) -> str:
+                formatted_query = self.format_query(query, **kwargs)
                 logger.info(f"query: {formatted_query}")
                 response = self.model(formatted_query,
                                       max_tokens=1024,
@@ -83,6 +87,19 @@ class MyLocalRAG:
                                       echo=False,)
                 logger.info(f"response: {response}")
                 return response["choices"][0]["text"]
+
+            def stream(self, query, **kwargs) -> Iterator[CompletionChunk]:
+                formatted_query = self.format_query(query, **kwargs)
+                logger.info(f"query: {formatted_query}")
+                response = self.model(formatted_query,
+                                      max_tokens=1024,
+                                      stop=["</s>"],
+                                      stream=True,
+                                      echo=False)
+                logger.info(f"response: {response}")
+                for part in response:
+                    chunk = part["choices"][0]["text"]
+                    yield chunk
 
             @property
             def metadata(self) -> LLMMetadata:
@@ -120,13 +137,15 @@ class MyLocalRAG:
             index.storage_context.persist(persist_dir="storage")
 
         self.query_engine = index.as_query_engine(
-            streaming=False,
+            streaming=True,
             service_context=service_context,
             # refine_template=refine_template,
             # response_mode="no_text",
         )
 
-    def query(self, message: str) -> tuple[str, list[NodeWithScore]]:
+    @logger.catch
+    async def query(self, message: str):
         logger.info(message)
         response = self.query_engine.query(message)
-        return response.response, response.source_nodes
+        for tkn in response.response_gen:
+            yield tkn
